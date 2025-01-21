@@ -1,4 +1,4 @@
-#Poryecto e-commerce para curso de Backend II de Coderhouse
+#Proyecto e-commerce para curso de Backend II de Coderhouse
 
 ## Descripción
 
