@@ -1,5 +1,5 @@
-import { generateToken } from '../utils/jwt.js';
 import UserDTO from '../dto/user.dto.js';
+import { generateToken } from '../utils/jwt.js';
 
 class SessionsController {
     async register(req, res) {

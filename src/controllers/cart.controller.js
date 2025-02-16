@@ -1,8 +1,8 @@
 import { cartService } from "../services/cart.service.js";
 import { ticketService } from "../services/ticket.service.js";
+import { productService } from "../services/product.service.js";
 import UserDTO from "../dto/user.dto.js";
 import { sendTicket } from "../utils/sendMail.js";
-import { productService } from "../services/product.service.js";
 
 class CartsController {
     async createCart(req, res) {

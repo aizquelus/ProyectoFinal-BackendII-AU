@@ -10,9 +10,9 @@ import envsConfig from './envs.config.js';
 
 
 const LocalStrategy = local.Strategy;
+const GoogleStrategy = google.Strategy;
 const JWTStrategy = jwt.Strategy;
 const ExtractJWT = jwt.ExtractJwt;
-const GoogleStrategy = google.Strategy;
 
 export const initializedPassport = () => {
     passport.use("register",
