@@ -6,7 +6,7 @@
   "type": "module",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "npx nodemon src/app"
+    "dev": "npx nodemon --env-file=.env src/app"
   },
   "keywords": [],
   "author": "",
@@ -23,6 +23,7 @@
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.4.1",
     "mongoose-paginate-v2": "^1.8.2",
+    "nodemailer": "^6.10.0",
     "passport": "^0.7.0",
     "passport-google-oauth20": "^2.0.0",
     "passport-jwt": "^4.0.1",

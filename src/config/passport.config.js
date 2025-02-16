@@ -1,15 +1,18 @@
 import passport from 'passport';
 import local from 'passport-local'
 import jwt from 'passport-jwt';
-import { userDao } from '../dao/mongo/user.dao.js';
+import google from 'passport-google-oauth20';
+import { userService } from '../services/user.service.js';
+import { cartService } from '../services/cart.service.js';
 import { createHash, isValidPassword } from '../utils/hashPassword.js';
-import { cartDao } from '../dao/mongo/cart.dao.js';
 import { cookieExtractor } from '../utils/cookieExtractor.js';
-import { JWT_SECRET_KEY } from './consts.config.js';
+import envsConfig from './envs.config.js';
+
 
 const LocalStrategy = local.Strategy;
 const JWTStrategy = jwt.Strategy;
 const ExtractJWT = jwt.ExtractJwt;
+const GoogleStrategy = google.Strategy;
 
 export const initializedPassport = () => {
     passport.use("register",
@@ -22,10 +25,10 @@ export const initializedPassport = () => {
                 try {
                     const { first_name, last_name, age, role } = req.body;
 
-                    const user = await userDao.getByEmail(username);
+                    const user = await userService.getByEmail(username);
                     if (user) return done(null, false, { message: `El usuario con el email '${username}' ya existe.` })
 
-                    const newCart = await cartDao.create();
+                    const newCart = await cartService.create();
 
                     const newUser = {
                         first_name,
@@ -37,7 +40,7 @@ export const initializedPassport = () => {
                         cart: newCart._id
                     }
 
-                    const finalUser = userDao.create(newUser);
+                    const finalUser = await userService.create(newUser);
 
                     done(null, finalUser);
                 } catch (error) {
@@ -52,7 +55,7 @@ export const initializedPassport = () => {
             { usernameField: "email" },
             async (username, password, done) => {
                 try {
-                    const user = await userDao.getByEmail(username);
+                    const user = await userService.getByEmail(username);
                     const isUserPassword = isValidPassword(password, user);
 
                     if (!user || !isUserPassword) return done(null, false, { message: "E-mail o contraseña incorrectos." })
@@ -67,14 +70,14 @@ export const initializedPassport = () => {
 
     passport.use("jwt",
         new JWTStrategy(
-            { 
-                jwtFromRequest: ExtractJWT.fromExtractors([cookieExtractor]), 
-                secretOrKey: JWT_SECRET_KEY 
+            {
+                jwtFromRequest: ExtractJWT.fromExtractors([cookieExtractor]),
+                secretOrKey: envsConfig.JWT_SECRET_KEY
             },
             async (jwt_payload, done) => {
                 try {
                     const { email } = jwt_payload;
-                    const user = await userDao.getByEmail(email);
+                    const user = await userService.getByEmail(email);
 
                     done(null, user);
                 } catch (error) {
@@ -84,13 +87,43 @@ export const initializedPassport = () => {
         )
     );
 
+    passport.use("google", new GoogleStrategy({
+        clientID: envsConfig.GOOGLE_CLIENT_ID,
+        clientSecret: envsConfig.GOOGLE_CLIENT_SECRET,
+        callbackURL: "http://localhost:8080/api/sessions/google"
+    },
+        async (accessToken, refreshToken, profile, cb) => {
+            try {
+                const { name, emails } = profile;
+                const user = await userService.getByEmail(emails[0].value);
+
+                if (user) return cb(null, user);
+
+                const newCart = await cartService.create();
+
+                const newUser = {
+                    first_name: name.givenName,
+                    last_name: name.familyName,
+                    email: emails[0].value,
+                    cart: newCart._id
+                }
+
+                const finalUser = await userService.create(newUser);
+
+                cb(null, finalUser);
+            } catch (error) {
+                cb(error);
+            }
+        }
+    ));
+
     passport.serializeUser((user, done) => {
         done(null, user._id);
     });
 
     passport.deserializeUser(async (id, done) => {
         try {
-            const user = await userDao.getById(id);
+            const user = await userService.getById(id);
             done(null, user);
         } catch (error) {
             done(error);

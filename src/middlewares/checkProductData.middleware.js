@@ -1,5 +1,5 @@
 import { request, response } from "express";
-import { productDao } from "../dao/mongo/product.dao.js";
+import { productService } from "../services/product.service.js";
 
 export const checkProductData = async (req = request, res = response, next) => {
   try {
@@ -10,12 +10,11 @@ export const checkProductData = async (req = request, res = response, next) => {
       price,
       code,
       stock,
-      category,
+      category
     };
 
-    const products = await productDao.getAll();
     // Validar que no se repita el campo de code
-    const productExists = products.docs.find((p) => p.code === code);
+    const productExists = await productService.productExists(code);
     if (productExists) return res.status(400).json({ status: "Error", msg: `El producto con el código ${code} ya existe` });
 
     // Validamos que los campos sean obligatorios

@@ -1,68 +1,27 @@
 import { Router } from 'express';
 import { passportCall } from '../middlewares/passportCall.middleware.js';
-import { generateToken } from '../utils/jwt.js';
 import { authorization } from '../middlewares/authorization.middleware.js';
+import passport from 'passport';
+import SessionsController from '../controllers/sessions.controller.js';
 
 const router = Router();
 
-router.post("/register", passportCall("register"), async (req, res) => {
-    try {
-        res.status(201).json({ status: "success", payload: "Usuario registrado exitosamente!" })
-    } catch (error) {
-        res.status(500).json({ status: "Error", msg: "Error interno del servidor" });
-    }
-});
+router.post("/register", passportCall("register"), SessionsController.register);
 
-router.post("/login", passportCall("login"), async (req, res) => {
-    try {
-        const { first_name, last_name, email, age, role } = req.user;
+router.post("/login", passportCall("login"), SessionsController.login);
 
-        req.session.user = {
-            first_name,
-            last_name,
-            email,
-            age,
-            role
-        }
+router.get("/profile", SessionsController.profile);
 
-        const token = generateToken(req.user);
-        res.cookie("token", token, { httpOnly: true });
+router.get("/logout", SessionsController.logout);
 
-        res.status(200).json({ status: "success", payload: req.session.user, token })
-    } catch (error) {
-        res.status(500).json({ status: "Error", msg: "Error interno del servidor" });
-    }
-});
+router.get(
+    "/google",
+    passport.authenticate("google", {
+        scope: ["https://www.googleapis.com/auth/userinfo.email", "https://www.googleapis.com/auth/userinfo.profile"],
+        session: false,
+    }), SessionsController.google
+);
 
-router.get("/profile", async (req, res) => {
-    try {
-        if (!req.session.user) return res.status(404).json({ status: "error", msg: "Usuario no logueado" });
-
-        res.status(200).json({ status: "success", payload: req.session.user });
-    } catch (error) {
-        res.status(500).json({ status: "Error", msg: "Error interno del servidor" });
-    }
-});
-
-router.get("/logout", async (req, res) => {
-    try {
-        if (!req.session.user) return res.status(404).json({ status: "error", message: "Usuario no logueado" });
-
-        req.session.destroy();
-        res.clearCookie("token");
-
-        res.status(200).json({ status: "success", payload: "Session cerrada exitosamente." });
-    } catch (error) {
-        res.status(500).json({ status: "Error", msg: "Error interno del servidor" });
-    }
-});
-
-router.get("/current", passportCall("jwt"), authorization("user"), async (req, res) => {
-    try {
-        res.status(200).json({ status: "success", user: req.user });
-    } catch (error) {
-        res.status(500).json( { status: "Error", msg: "Error interno del servidor"})
-    }
-});
+router.get("/current", passportCall("jwt"), authorization("user"), SessionsController.current);
 
 export default router;

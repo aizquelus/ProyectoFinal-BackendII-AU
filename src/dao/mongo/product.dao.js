@@ -22,7 +22,7 @@ class ProductDao {
   }
 
   async deleteOne(id) {
-    const product = await productModel.findByIdAndUpdate(id, { status: false }, { new: true });
+    const product = await productModel.deleteOne({ _id: id });
     return product;
   }
 }
